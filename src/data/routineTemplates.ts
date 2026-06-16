@@ -1,6 +1,7 @@
 import type { Exercise } from '../types'
 import { getLibraryExercise } from '../data/exerciseLibrary'
 import { categoryUsesWeight } from '../lib/equipment'
+import { DEFAULT_REST_SECONDS } from '../lib/constants'
 import { generateId } from '../lib/storage'
 import { KPOP_TEMPLATES } from './kpopTemplates'
 
@@ -12,7 +13,7 @@ export interface TemplateExercise {
   restSeconds?: number
 }
 
-export type TemplateGroup = 'ppl' | 'upper-lower' | 'full-body' | 'beginner' | 'kpop'
+export type TemplateGroup = 'ppl' | 'upper-lower' | 'full-body' | 'beginner' | 'machines' | 'kpop'
 
 export interface RoutineTemplate {
   id: string
@@ -115,11 +116,59 @@ const STARTER_TEMPLATES: RoutineTemplate[] = [
       { libraryId: 'glute-bridge' },
     ],
   },
+  {
+    id: 'machine-upper',
+    name: 'Machine Upper Body',
+    description: 'Chest press, pulldown & seated row',
+    group: 'machines',
+    exercises: [
+      { libraryId: 'chest-press-machine' },
+      { libraryId: 'lat-pulldown' },
+      { libraryId: 'seated-row' },
+      { libraryId: 'tricep-pushdown' },
+    ],
+  },
+  {
+    id: 'machine-lower',
+    name: 'Machine Lower Body',
+    description: 'Smith squat, leg press & leg curl',
+    group: 'machines',
+    exercises: [
+      { libraryId: 'smith-squat' },
+      { libraryId: 'leg-press' },
+      { libraryId: 'leg-curl' },
+    ],
+  },
+  {
+    id: 'machine-full-body',
+    name: 'Machine Full Body',
+    description: 'Full workout using gym machines only',
+    group: 'machines',
+    exercises: [
+      { libraryId: 'chest-press-machine' },
+      { libraryId: 'lat-pulldown' },
+      { libraryId: 'leg-press' },
+      { libraryId: 'seated-row' },
+      { libraryId: 'leg-curl' },
+    ],
+  },
+  {
+    id: 'machine-beginner',
+    name: 'Machine Beginner',
+    description: 'Easy intro — 3 staple machines',
+    group: 'machines',
+    exercises: [
+      { libraryId: 'chest-press-machine' },
+      { libraryId: 'lat-pulldown' },
+      { libraryId: 'leg-press' },
+    ],
+  },
 ]
 
 export const ROUTINE_TEMPLATES: RoutineTemplate[] = [...STARTER_TEMPLATES, ...KPOP_TEMPLATES]
 
 export const TEMPLATE_GROUPS: { id: Exclude<TemplateGroup, 'kpop'>; label: string }[] = [
+  { id: 'machines', label: 'Gym Machines' },
   { id: 'ppl', label: 'Push / Pull / Legs' },
   { id: 'upper-lower', label: 'Upper / Lower' },
   { id: 'full-body', label: 'Full Body' },
@@ -135,7 +184,7 @@ export function exercisesFromTemplate(template: RoutineTemplate): Exercise[] {
         name: item.name ?? item.libraryId,
         targetSets: item.targetSets ?? 3,
         targetReps: item.targetReps ?? 10,
-        restSeconds: item.restSeconds ?? 60,
+        restSeconds: item.restSeconds ?? DEFAULT_REST_SECONDS,
         trackingMode: 'reps',
       }
     }

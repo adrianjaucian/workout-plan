@@ -4,10 +4,12 @@ import { getDiagramId, getLibraryExercise, type LibraryExercise } from '../data/
 import { categoryUsesWeight, shouldTrackWeight } from '../lib/equipment'
 import { targetDescription, usesTimer } from '../lib/exerciseTracking'
 import { generateId } from '../lib/storage'
+import { DEFAULT_REST_SECONDS } from '../lib/constants'
 import { Button } from './Button'
 import { ExerciseDiagram } from './ExerciseDiagram'
 import { ExercisePicker } from './ExercisePicker'
 import { Layout } from './Layout'
+import { NumberInput } from './NumberInput'
 
 interface RoutineEditorProps {
   routine: Routine | null
@@ -21,7 +23,7 @@ function emptyExercise(): Exercise {
     name: '',
     targetSets: 3,
     targetReps: 10,
-    restSeconds: 60,
+    restSeconds: DEFAULT_REST_SECONDS,
   }
 }
 
@@ -92,7 +94,7 @@ export function RoutineEditor({ routine, onSave, onBack }: RoutineEditorProps) {
   }
 
   const reorderExercises = (from: number, to: number) => {
-    if (from === to) return
+    if (from === to || from < 0 || to < 0 || from >= exercises.length || to >= exercises.length) return
     setExercises((prev) => {
       const copy = [...prev]
       const [item] = copy.splice(from, 1)
@@ -100,6 +102,83 @@ export function RoutineEditor({ routine, onSave, onBack }: RoutineEditorProps) {
       return copy
     })
   }
+
+  const moveExercise = (index: number, direction: -1 | 1) => {
+    reorderExercises(index, index + direction)
+  }
+
+  const handleReorderPointerMove = (e: React.PointerEvent) => {
+    if (dragIndex === null) return
+    const el = document.elementFromPoint(e.clientX, e.clientY)
+    const row = el?.closest('[data-exercise-index]')
+    if (row) {
+      const overIndex = Number(row.getAttribute('data-exercise-index'))
+      if (!Number.isNaN(overIndex)) setDragOverIndex(overIndex)
+    }
+  }
+
+  const finishReorder = () => {
+    if (dragIndex !== null && dragOverIndex !== null && dragIndex !== dragOverIndex) {
+      reorderExercises(dragIndex, dragOverIndex)
+    }
+    setDragIndex(null)
+    setDragOverIndex(null)
+  }
+
+  const ReorderControls = ({ index }: { index: number }) => (
+    <div className="flex shrink-0 flex-col gap-0.5">
+      <button
+        type="button"
+        disabled={index === 0}
+        onClick={() => moveExercise(index, -1)}
+        className="flex h-6 w-7 items-center justify-center rounded-md text-text-muted hover:bg-surface-overlay hover:text-text disabled:opacity-30"
+        aria-label="Move exercise up"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M6 15l6-6 6 6" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        disabled={index === exercises.length - 1}
+        onClick={() => moveExercise(index, 1)}
+        className="flex h-6 w-7 items-center justify-center rounded-md text-text-muted hover:bg-surface-overlay hover:text-text disabled:opacity-30"
+        aria-label="Move exercise down"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+    </div>
+  )
+
+  const DragHandleButton = ({ index }: { index: number }) => (
+    <button
+      type="button"
+      draggable
+      data-drag-handle
+      onDragStart={() => setDragIndex(index)}
+      onDragEnd={finishReorder}
+      onPointerDown={(e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return
+        e.preventDefault()
+        setDragIndex(index)
+        e.currentTarget.setPointerCapture(e.pointerId)
+      }}
+      onPointerMove={handleReorderPointerMove}
+      onPointerUp={(e) => {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+          e.currentTarget.releasePointerCapture(e.pointerId)
+        }
+        finishReorder()
+      }}
+      onPointerCancel={finishReorder}
+      className="cursor-grab touch-none px-0.5 active:cursor-grabbing"
+      aria-label="Drag to reorder"
+    >
+      <DragHandle />
+    </button>
+  )
 
   const handleSave = () => {
     const trimmedName = name.trim() || 'Untitled Routine'
@@ -158,6 +237,7 @@ export function RoutineEditor({ routine, onSave, onBack }: RoutineEditorProps) {
               return (
                 <div
                   key={exercise.id}
+                  data-exercise-index={index}
                   onDragOver={(e) => {
                     e.preventDefault()
                     setDragOverIndex(index)
@@ -175,20 +255,8 @@ export function RoutineEditor({ routine, onSave, onBack }: RoutineEditorProps) {
                     isDragOver ? 'border-accent bg-accent-muted/30' : 'border-border',
                   ].join(' ')}
                 >
-                  <button
-                    type="button"
-                    draggable
-                    data-drag-handle
-                    onDragStart={() => setDragIndex(index)}
-                    onDragEnd={() => {
-                      setDragIndex(null)
-                      setDragOverIndex(null)
-                    }}
-                    className="cursor-grab touch-none px-0.5 active:cursor-grabbing"
-                    aria-label="Drag to reorder"
-                  >
-                    <DragHandle />
-                  </button>
+                  {exercises.length > 1 && <ReorderControls index={index} />}
+                  <DragHandleButton index={index} />
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-surface-overlay text-xs font-bold text-text-muted">
                     {index + 1}
                   </span>
@@ -226,6 +294,7 @@ export function RoutineEditor({ routine, onSave, onBack }: RoutineEditorProps) {
             return (
               <div
                 key={exercise.id}
+                data-exercise-index={index}
                 onDragOver={(e) => {
                   e.preventDefault()
                   setDragOverIndex(index)
@@ -244,20 +313,8 @@ export function RoutineEditor({ routine, onSave, onBack }: RoutineEditorProps) {
                 ].join(' ')}
               >
                 <div className="mb-3 flex items-center gap-2">
-                  <button
-                    type="button"
-                    draggable
-                    data-drag-handle
-                    onDragStart={() => setDragIndex(index)}
-                    onDragEnd={() => {
-                      setDragIndex(null)
-                      setDragOverIndex(null)
-                    }}
-                    className="cursor-grab touch-none shrink-0 px-0.5 active:cursor-grabbing"
-                    aria-label="Drag to reorder"
-                  >
-                    <DragHandle />
-                  </button>
+                  {exercises.length > 1 && <ReorderControls index={index} />}
+                  <DragHandleButton index={index} />
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-surface-overlay text-xs font-bold text-text-muted">
                     {index + 1}
                   </span>
@@ -320,14 +377,11 @@ export function RoutineEditor({ routine, onSave, onBack }: RoutineEditorProps) {
                 <div className="mt-3 grid grid-cols-3 gap-2">
                   <div>
                     <label className="mb-1 block text-xs text-text-muted">Sets</label>
-                    <input
-                      type="number"
+                    <NumberInput
                       min={1}
                       max={20}
                       value={exercise.targetSets}
-                      onChange={(e) =>
-                        updateExercise(exercise.id, 'targetSets', Math.max(1, +e.target.value || 1))
-                      }
+                      onChange={(n) => updateExercise(exercise.id, 'targetSets', n)}
                       className="w-full rounded-lg border border-border bg-surface-overlay px-3 py-2 text-center text-text outline-none focus:border-accent"
                     />
                   </div>
@@ -335,28 +389,21 @@ export function RoutineEditor({ routine, onSave, onBack }: RoutineEditorProps) {
                     <label className="mb-1 block text-xs text-text-muted">
                       {usesTimer(exercise) ? 'Duration (s)' : 'Reps'}
                     </label>
-                    <input
-                      type="number"
+                    <NumberInput
                       min={1}
                       max={999}
                       value={exercise.targetReps}
-                      onChange={(e) =>
-                        updateExercise(exercise.id, 'targetReps', Math.max(1, +e.target.value || 1))
-                      }
+                      onChange={(n) => updateExercise(exercise.id, 'targetReps', n)}
                       className="w-full rounded-lg border border-border bg-surface-overlay px-3 py-2 text-center text-text outline-none focus:border-accent"
                     />
                   </div>
                   <div>
                     <label className="mb-1 block text-xs text-text-muted">Rest (s)</label>
-                    <input
-                      type="number"
+                    <NumberInput
                       min={0}
                       max={600}
-                      step={5}
                       value={exercise.restSeconds}
-                      onChange={(e) =>
-                        updateExercise(exercise.id, 'restSeconds', Math.max(0, +e.target.value || 0))
-                      }
+                      onChange={(n) => updateExercise(exercise.id, 'restSeconds', n)}
                       className="w-full rounded-lg border border-border bg-surface-overlay px-3 py-2 text-center text-text outline-none focus:border-accent"
                     />
                   </div>

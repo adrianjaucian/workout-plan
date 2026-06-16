@@ -21,6 +21,7 @@ import { NextExercisePreview } from './NextExercisePreview'
 import { RestTimer } from './RestTimer'
 import { WorkoutProgressPanel } from './WorkoutProgressPanel'
 import { WeightInput } from './WeightInput'
+import { NumberInput } from './NumberInput'
 
 interface WorkoutSessionProps {
   routine: Routine
@@ -539,12 +540,11 @@ export function WorkoutSession({ routine, onFinish, onBack }: WorkoutSessionProp
                     >
                       −
                     </button>
-                    <input
-                      type="number"
+                    <NumberInput
                       min={0}
                       max={999}
                       value={reps}
-                      onChange={(e) => setReps(Math.max(0, +e.target.value || 0))}
+                      onChange={setReps}
                       className="w-24 rounded-xl border border-border bg-surface-overlay py-3 text-center font-mono text-4xl font-bold text-text outline-none focus:border-accent"
                     />
                     <button

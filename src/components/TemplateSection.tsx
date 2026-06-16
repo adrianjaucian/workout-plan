@@ -94,7 +94,7 @@ export function TemplateSection({ onUseTemplate }: TemplateSectionProps) {
           <div>
             <h2 className="font-semibold text-text">Starter templates</h2>
             <p className="mt-0.5 text-sm text-text-muted">
-              Push/Pull/Legs, Upper/Lower, Full Body & more
+              Push/Pull/Legs, Gym Machines, Full Body & more
             </p>
           </div>
           <svg
