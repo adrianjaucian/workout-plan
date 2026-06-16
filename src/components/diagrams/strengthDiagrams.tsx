@@ -455,4 +455,50 @@ export const diagrams: Record<string, () => ReactNode> = {
       <MoveArrow d="M150 70 Q140 56 150 42" />
     </DiagramFrame>
   ),
+
+  burpee: () => (
+    <DiagramFrame muscles={['core', 'quads', 'shoulders']}>
+      <Head cx={100} cy={38} />
+      <Torso d="M90 46 Q100 44 110 46 L108 72 Q100 74 92 72 Z" />
+      <TealShorts d="M92 70 L108 70 L110 82 L90 82 Z" />
+      <Limb x1={92} y1={54} x2={72} y2={68} />
+      <Limb x1={108} y1={54} x2={128} y2={68} />
+      <Limb x1={94} y1={82} x2={88} y2={108} />
+      <Limb x1={106} y1={82} x2={112} y2={108} />
+      <StepBadge n={1} x={42} y={68} />
+      <StepBadge n={2} x={42} y={108} />
+      <MoveArrow d="M38 66 Q28 88 38 106" />
+    </DiagramFrame>
+  ),
+
+  'step-up': () => (
+    <DiagramFrame muscles={['quads', 'glutes']}>
+      <rect x={88} y={100} width="40" height="12" fill="#CFD8DC" stroke="#263238" strokeWidth="1.2" rx="2" />
+      <Head cx={100} cy={48} />
+      <Torso d="M90 56 Q100 54 110 56 L108 88 Q100 90 92 88 Z" />
+      <TealShorts d="M92 86 L108 86 L110 100 L90 100 Z" />
+      <Limb x1={94} y1={100} x2={100} y2={100} />
+      <Limb x1={106} y1={100} x2={112} y2={112} />
+      <Limb x1={100} y1={60} x2={88} y2={72} />
+      <Limb x1={100} y1={60} x2={112} y2={72} />
+      <StepBadge n={1} x={42} y={108} />
+      <StepBadge n={2} x={42} y={72} />
+      <MoveArrow d="M38 106 Q28 88 38 70" />
+    </DiagramFrame>
+  ),
+
+  'farmer-carry': () => (
+    <DiagramFrame muscles={['forearms', 'traps', 'core']}>
+      <Head cx={100} cy={42} />
+      <Torso d="M90 50 Q100 48 110 50 L108 92 Q100 94 92 92 Z" />
+      <TealShorts d="M92 90 L108 90 L110 108 L90 108 Z" />
+      <Limb x1={92} y1={58} x2={68} y2={78} />
+      <Limb x1={108} y1={58} x2={132} y2={78} />
+      <Limb x1={94} y1={108} x2={90} y2={124} />
+      <Limb x1={106} y1={108} x2={110} y2={124} />
+      <Dumbbell cx={64} cy={80} />
+      <Dumbbell cx={136} cy={80} />
+      <MoveArrow d="M118 118 Q140 110 158 118" />
+    </DiagramFrame>
+  ),
 }

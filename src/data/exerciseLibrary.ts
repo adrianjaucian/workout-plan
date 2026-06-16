@@ -42,6 +42,7 @@ export const EXERCISE_LIBRARY: LibraryExercise[] = [
   { id: 'dumbbell-lunge', name: 'Dumbbell Lunge', category: 'dumbbell', diagramId: 'dumbbell-lunge', targetSets: 3, targetReps: 10, restSeconds: 75 },
   { id: 'dumbbell-row', name: 'Dumbbell Row', category: 'dumbbell', diagramId: 'dumbbell-row', targetSets: 3, targetReps: 10, restSeconds: 75 },
   { id: 'goblet-squat', name: 'Goblet Squat', category: 'dumbbell', diagramId: 'goblet-squat', targetSets: 3, targetReps: 12, restSeconds: 75 },
+  { id: 'farmer-carry', name: 'Farmer Carry', category: 'dumbbell', diagramId: 'farmer-carry', targetSets: 3, targetReps: 45, restSeconds: 60, unit: 'seconds' },
 
   // Machines
   { id: 'lat-pulldown', name: 'Lat Pulldown', category: 'machine', diagramId: 'lat-pulldown', targetSets: 3, targetReps: 10, restSeconds: 75 },
@@ -62,6 +63,10 @@ export const EXERCISE_LIBRARY: LibraryExercise[] = [
   { id: 'push-up', name: 'Push-up', category: 'bodyweight', diagramId: 'push-up', targetSets: 3, targetReps: 15, restSeconds: 60 },
   { id: 'dip', name: 'Dip', category: 'bodyweight', diagramId: 'dip', targetSets: 3, targetReps: 10, restSeconds: 75 },
   { id: 'chin-up', name: 'Chin-up', category: 'bodyweight', diagramId: 'chin-up', targetSets: 3, targetReps: 8, restSeconds: 90 },
+  { id: 'bodyweight-squat', name: 'Bodyweight Squat', category: 'bodyweight', diagramId: 'barbell-squat', targetSets: 3, targetReps: 20, restSeconds: 60 },
+  { id: 'walking-lunge', name: 'Walking Lunge', category: 'bodyweight', diagramId: 'dumbbell-lunge', targetSets: 3, targetReps: 10, restSeconds: 60 },
+  { id: 'burpee', name: 'Burpee', category: 'bodyweight', diagramId: 'burpee', targetSets: 3, targetReps: 5, restSeconds: 60 },
+  { id: 'step-up', name: 'Step-up', category: 'bodyweight', diagramId: 'step-up', targetSets: 3, targetReps: 12, restSeconds: 45 },
 
   // Mat
   { id: 'plank', name: 'Plank', category: 'mat', diagramId: 'plank', targetSets: 3, targetReps: 45, restSeconds: 45, unit: 'seconds' },
@@ -75,6 +80,14 @@ export const EXERCISE_LIBRARY: LibraryExercise[] = [
   { id: 'dead-bug', name: 'Dead Bug', category: 'mat', diagramId: 'dead-bug', targetSets: 3, targetReps: 10, restSeconds: 45 },
   { id: 'mountain-climber', name: 'Mountain Climbers', category: 'mat', diagramId: 'mountain-climber', targetSets: 3, targetReps: 20, restSeconds: 45 },
   { id: 'bicycle-crunch', name: 'Bicycle Crunch', category: 'mat', diagramId: 'bicycle-crunch', targetSets: 3, targetReps: 20, restSeconds: 45 },
+  { id: 'side-plank', name: 'Side Plank', category: 'mat', diagramId: 'side-plank', targetSets: 3, targetReps: 20, restSeconds: 45, unit: 'seconds' },
+  { id: 'side-leg-raise', name: 'Side Leg Raise', category: 'mat', diagramId: 'side-leg-raise', targetSets: 3, targetReps: 15, restSeconds: 40 },
+  { id: 'pilates-roll-up', name: 'Pilates Roll-up', category: 'mat', diagramId: 'pilates-roll-up', targetSets: 3, targetReps: 10, restSeconds: 45 },
+  { id: 'brisk-walk', name: 'Brisk Walk', category: 'mat', diagramId: 'brisk-walk', targetSets: 1, targetReps: 300, restSeconds: 0, unit: 'seconds' },
+  { id: 'dynamic-stretch', name: 'Dynamic Stretching', category: 'mat', diagramId: 'dynamic-stretch', targetSets: 1, targetReps: 60, restSeconds: 30, unit: 'seconds' },
+  { id: 'dance-cardio', name: 'Dance Cardio', category: 'mat', diagramId: 'dance-cardio', targetSets: 1, targetReps: 180, restSeconds: 30, unit: 'seconds' },
+  { id: 'stretch-flow', name: 'Stretch Flow', category: 'mat', diagramId: 'stretch-flow', targetSets: 1, targetReps: 120, restSeconds: 0, unit: 'seconds' },
+  { id: 'jump-rope', name: 'Jump Rope', category: 'mat', diagramId: 'jump-rope', targetSets: 3, targetReps: 45, restSeconds: 40, unit: 'seconds' },
 ]
 
 const libraryById = new Map(EXERCISE_LIBRARY.map((e) => [e.id, e]))

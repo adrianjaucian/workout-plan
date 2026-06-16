@@ -172,4 +172,111 @@ export const matDiagrams: Record<string, () => ReactNode> = {
       <MoveArrow d="M38 98 Q26 82 34 66" />
     </DiagramFrame>
   ),
+
+  'side-plank': () => (
+    <DiagramFrame muscles={['core', 'shoulders']}>
+      <Mat />
+      <path d="M72 108 Q100 78 128 108" fill="none" stroke="#263238" strokeWidth="5" strokeLinecap="round" />
+      <Head cx={130} cy={82} />
+      <Limb x1={72} y1={108} x2={68} y2={118} />
+      <Limb x1={100} y1={80} x2={118} y2={108} />
+      <TealShorts d="M94 88 L108 90 L106 100 L92 98 Z" />
+      <StepBadge n={1} x={42} y={100} />
+      <StepBadge n={2} x={42} y={78} />
+      <MoveArrow d="M38 98 Q28 86 38 74" />
+    </DiagramFrame>
+  ),
+
+  'side-leg-raise': () => (
+    <DiagramFrame muscles={['glutes', 'core']}>
+      <Mat />
+      <path d="M72 108 Q100 90 128 108" fill="none" stroke="#263238" strokeWidth="5" strokeLinecap="round" />
+      <Head cx={68} cy={100} />
+      <Limb x1={118} y1={100} x2={145} y2={70} />
+      <TealShorts d="M88 96 L112 96 L114 106 L86 106 Z" />
+      <StepBadge n={1} x={155} y={100} />
+      <StepBadge n={2} x={155} y={68} />
+      <MoveArrow d="M150 98 Q162 82 154 66" />
+    </DiagramFrame>
+  ),
+
+  'pilates-roll-up': () => (
+    <DiagramFrame muscles={['core']}>
+      <Mat />
+      <path d="M80 118 Q100 70 120 90" fill="none" stroke="#263238" strokeWidth="5" strokeLinecap="round" />
+      <Head cx={122} cy={86} />
+      <Limb x1={80} y1={118} x2={74} y2={128} />
+      <TealShorts d="M92 100 L108 100 L110 110 L90 110 Z" />
+      <StepBadge n={1} x={42} y={118} />
+      <StepBadge n={2} x={42} y={82} />
+      <MoveArrow d="M38 116 Q28 98 38 80" />
+    </DiagramFrame>
+  ),
+
+  'brisk-walk': () => (
+    <DiagramFrame muscles={['quads', 'calves']}>
+      <Head cx={100} cy={42} />
+      <Torso d="M90 50 Q100 48 110 50 L108 82 Q100 84 92 82 Z" />
+      <TealShorts d="M92 80 L108 80 L110 92 L90 92 Z" />
+      <Limb x1={94} y1={92} x2={88} y2={112} />
+      <Limb x1={106} y1={92} x2={112} y2={108} />
+      <Limb x1={100} y1={56} x2={88} y2={68} />
+      <Limb x1={100} y1={56} x2={112} y2={68} />
+      <MoveArrow d="M118 100 Q140 90 158 100" />
+      <text x={100} y={130} textAnchor="middle" fill="#48A9A6" fontSize="8" fontWeight="600">Walk</text>
+    </DiagramFrame>
+  ),
+
+  'dynamic-stretch': () => (
+    <DiagramFrame muscles={['quads', 'hamstrings', 'shoulders']}>
+      <Head cx={100} cy={40} />
+      <Torso d="M90 48 Q100 46 110 48 L108 88 Q100 90 92 88 Z" />
+      <TealShorts d="M92 86 L108 86 L110 100 L90 100 Z" />
+      <Limb x1={92} y1={56} x2={72} y2={72} />
+      <Limb x1={108} y1={56} x2={128} y2={72} />
+      <Limb x1={94} y1={100} x2={88} y2={118} />
+      <Limb x1={106} y1={100} x2={118} y2={112} />
+      <MoveArrow d="M72 70 Q60 56 72 42" />
+      <MoveArrow d="M128 70 Q140 56 128 42" />
+    </DiagramFrame>
+  ),
+
+  'dance-cardio': () => (
+    <DiagramFrame muscles={['core', 'quads']}>
+      <Head cx={100} cy={38} />
+      <Torso d="M90 46 Q100 44 110 46 L108 78 Q100 80 92 78 Z" />
+      <TealShorts d="M90 76 L110 76 L112 90 L88 90 Z" />
+      <Limb x1={90} y1={54} x2={70} y2={48} />
+      <Limb x1={110} y1={54} x2={130} y2={48} />
+      <Limb x1={92} y1={90} x2={82} y2={112} />
+      <Limb x1={108} y1={90} x2={118} y2={108} />
+      <MoveArrow d="M68 46 Q52 62 68 78" />
+      <MoveArrow d="M132 46 Q148 62 132 78" />
+      <text x={100} y={128} textAnchor="middle" fill="#48A9A6" fontSize="8" fontWeight="600">Dance</text>
+    </DiagramFrame>
+  ),
+
+  'stretch-flow': () => (
+    <DiagramFrame muscles={['back', 'core']}>
+      <Mat />
+      <path d="M52 92 Q78 58 100 88 Q122 118 148 88" fill="none" stroke="#263238" strokeWidth="5" strokeLinecap="round" />
+      <Head cx={48} cy={90} />
+      <TealShorts d="M86 86 L114 86 L116 96 L84 96 Z" />
+      <text x={100} y={68} textAnchor="middle" fill="#48A9A6" fontSize="8" fontWeight="600">Flow</text>
+    </DiagramFrame>
+  ),
+
+  'jump-rope': () => (
+    <DiagramFrame muscles={['calves', 'core']}>
+      <path d="M60 28 Q100 12 140 28" fill="none" stroke="#48A9A6" strokeWidth="2" />
+      <Head cx={100} cy={48} />
+      <Torso d="M90 56 Q100 54 110 56 L108 90 Q100 92 92 90 Z" />
+      <TealShorts d="M92 88 L108 88 L110 102 L90 102 Z" />
+      <Limb x1={94} y1={102} x2={90} y2={118} />
+      <Limb x1={106} y1={102} x2={110} y2={112} />
+      <StepBadge n={1} x={42} y={110} />
+      <StepBadge n={2} x={42} y={90} />
+      <MoveArrow d="M38 108 L38 88" />
+    </DiagramFrame>
+  ),
 }
