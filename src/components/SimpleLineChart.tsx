@@ -17,7 +17,7 @@ export function SimpleLineChart({
   data,
   label,
   unit = '',
-  color = '#6366f1',
+  color = '#2ECC71',
   height = 140,
 }: SimpleLineChartProps) {
   if (data.length === 0) {

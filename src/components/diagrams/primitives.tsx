@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
-export const TEAL = '#48A9A6'
-export const TEAL_DARK = '#3A8A88'
+export const TEAL = '#2ECC71'
+export const TEAL_DARK = '#00C853'
 export const OUTLINE = '#263238'
 export const SKIN = '#FAFAFA'
 export const GREY = '#CFD8DC'

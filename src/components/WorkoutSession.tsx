@@ -6,9 +6,10 @@ import { targetDescription, usesTimer } from '../lib/exerciseTracking'
 import { generateId, saveWorkoutLog } from '../lib/storage'
 import { playTimerComplete, playWorkoutComplete, resumeAudio } from '../lib/sounds'
 import {
-  findOutstandingExercise,
+  findNextCircuitPosition,
   getCompletedSetCount,
   getExerciseProgressList,
+  getSkippedOutstandingExercises,
 } from '../lib/workoutProgress'
 import { useRestTimer } from '../hooks/useRestTimer'
 import { formatElapsed, useElapsedSeconds } from '../hooks/useElapsedTime'
@@ -41,22 +42,40 @@ export function WorkoutSession({ routine, onFinish, onBack }: WorkoutSessionProp
   const [startedAt] = useState(() => new Date().toISOString())
   const [restTotal, setRestTotal] = useState(0)
   const [setTimerTotal, setSetTimerTotal] = useState(0)
+  const [restUpNext, setRestUpNext] = useState<{ exerciseIndex: number; setIndex: number } | null>(
+    null,
+  )
   const workoutCompletePlayed = useRef(false)
   const [maxReachedIndex, setMaxReachedIndex] = useState(0)
   const [visitedExerciseIds, setVisitedExerciseIds] = useState<Set<string>>(() =>
     new Set(routine.exercises[0] ? [routine.exercises[0].id] : []),
   )
   const [skippedExerciseIds, setSkippedExerciseIds] = useState<Set<string>>(new Set())
+  const [isPaused, setIsPaused] = useState(false)
+  const [pausedMs, setPausedMs] = useState(0)
+  const [pauseStartedAt, setPauseStartedAt] = useState<number | null>(null)
+  const [showEndPrompt, setShowEndPrompt] = useState(false)
+  const suppressTimerEffects = useRef(false)
 
   const timer = useRestTimer()
-  const elapsedSeconds = useElapsedSeconds(startedAt)
+  const elapsedSeconds = useElapsedSeconds(startedAt, { pausedMs, pauseStartedAt })
   const exercise = routine.exercises[exerciseIndex]
   const diagramId = getDiagramId(exercise.libraryId, exercise.name)
   const isTimed = usesTimer(exercise)
   const tracksWeight = shouldTrackWeight(exercise)
   const completedOnCurrent = getCompletedSetCount(exercise.id, logs)
-  const isLastSet = setIndex >= exercise.targetSets - 1
-  const isLastExercise = exerciseIndex >= routine.exercises.length - 1
+
+  const nextAfterCurrentSet = (
+    currentLogs: WorkoutExerciseLog[],
+    pendingComplete?: { exerciseId: string; newCount: number },
+  ) =>
+    findNextCircuitPosition(
+      routine,
+      currentLogs,
+      exerciseIndex,
+      skippedExerciseIds,
+      pendingComplete,
+    )
 
   const completedExerciseIds = useMemo(() => {
     const ids = new Set<string>()
@@ -95,28 +114,35 @@ export function WorkoutSession({ routine, onFinish, onBack }: WorkoutSessionProp
   }, [routine.exercises])
 
   const nextPreview = (() => {
-    if (!isLastSet) {
+    if (phase === 'rest' && restUpNext) {
+      const nextEx = routine.exercises[restUpNext.exerciseIndex]
+      return {
+        exercise: nextEx,
+        setNumber: restUpNext.setIndex + 1,
+        totalSets: nextEx.targetSets,
+        isSameExercise: restUpNext.exerciseIndex === exerciseIndex,
+      }
+    }
+
+    const upcoming = nextAfterCurrentSet(logs, {
+      exerciseId: exercise.id,
+      newCount: completedOnCurrent + 1,
+    })
+    if (!upcoming) {
       return {
         exercise,
-        setNumber: setIndex + 2,
+        setNumber: completedOnCurrent + 1,
         totalSets: exercise.targetSets,
         isSameExercise: true,
       }
     }
-    const nextExercise = routine.exercises[exerciseIndex + 1]
-    if (!nextExercise) {
-      return {
-        exercise,
-        setNumber: exercise.targetSets,
-        totalSets: exercise.targetSets,
-        isSameExercise: true,
-      }
-    }
+
+    const nextEx = routine.exercises[upcoming.exerciseIndex]
     return {
-      exercise: nextExercise,
-      setNumber: 1,
-      totalSets: nextExercise.targetSets,
-      isSameExercise: false,
+      exercise: nextEx,
+      setNumber: upcoming.setIndex + 1,
+      totalSets: nextEx.targetSets,
+      isSameExercise: upcoming.exerciseIndex === exerciseIndex,
     }
   })()
 
@@ -169,6 +195,7 @@ export function WorkoutSession({ routine, onFinish, onBack }: WorkoutSessionProp
       timer.stop()
       setRestTotal(0)
       setSetTimerTotal(0)
+      setRestUpNext(null)
       setExerciseIndex(exIndex)
       setSetIndex(setIdx)
       setPhase('active')
@@ -177,61 +204,77 @@ export function WorkoutSession({ routine, onFinish, onBack }: WorkoutSessionProp
     [timer, markVisited],
   )
 
-  const tryFinishOrContinue = useCallback(
-    (currentLogs: WorkoutExerciseLog[], pendingComplete?: { exerciseId: string; newCount: number }) => {
-      const outstanding = findOutstandingExercise(
-        routine,
-        currentLogs,
-        visitedExerciseIds,
-        pendingComplete,
-      )
-
-      if (outstanding) {
-        goToSet(outstanding.exerciseIndex, outstanding.setIndex)
-        return
-      }
-
-      const nextForwardIndex = exerciseIndex + 1
-      if (nextForwardIndex < routine.exercises.length) {
-        const nextEx = routine.exercises[nextForwardIndex]
-        goToSet(nextForwardIndex, getCompletedSetCount(nextEx.id, currentLogs))
-        return
-      }
-
+  const attemptComplete = useCallback(() => {
+    const outstanding = getSkippedOutstandingExercises(routine, logs, skippedExerciseIds)
+    if (outstanding.length === 0) {
       setPhase('complete')
-    },
-    [routine, visitedExerciseIds, exerciseIndex, goToSet],
-  )
-
-  const advanceAfterRest = useCallback(() => {
-    if (!isLastSet) {
-      setSetIndex((i) => i + 1)
-      setPhase('active')
       return
     }
 
-    const newCount = completedOnCurrent + 1
-    tryFinishOrContinue(logs, { exerciseId: exercise.id, newCount })
-  }, [isLastSet, completedOnCurrent, exercise.id, logs, tryFinishOrContinue])
+    const names = outstanding.map((o) => o.exercise.name).join(', ')
+    const unfinishedSets = outstanding.reduce(
+      (sum, o) => sum + (o.exercise.targetSets - o.setIndex),
+      0,
+    )
 
-  const proceedWithLogs = useCallback(
-    (currentLogs: WorkoutExerciseLog[], newCount: number) => {
-      if (newCount < exercise.targetSets) {
-        if (exercise.restSeconds > 0) {
-          setRestTotal(exercise.restSeconds)
-          timer.start(exercise.restSeconds)
-          setPhase('rest')
-        } else {
-          setSetIndex(setIndex + 1)
-          setPhase('active')
-        }
+    if (
+      confirm(
+        `You have ${unfinishedSets} unfinished set(s) on skipped exercises (${names}). Return to complete them?`,
+      )
+    ) {
+      const idsToRestore = new Set(outstanding.map((o) => o.exercise.id))
+      setSkippedExerciseIds((prev) => {
+        const next = new Set(prev)
+        for (const id of idsToRestore) next.delete(id)
+        return next
+      })
+      const first = outstanding[0]
+      goToSet(first.exerciseIndex, first.setIndex)
+    } else {
+      setPhase('complete')
+    }
+  }, [routine, logs, skippedExerciseIds, goToSet])
+
+  const proceedAfterSet = useCallback(
+    (
+      currentLogs: WorkoutExerciseLog[],
+      fromIndex: number,
+      pendingComplete?: { exerciseId: string; newCount: number },
+    ) => {
+      const next = findNextCircuitPosition(
+        routine,
+        currentLogs,
+        fromIndex,
+        skippedExerciseIds,
+        pendingComplete,
+      )
+
+      if (!next) {
+        setRestUpNext(null)
+        attemptComplete()
         return
       }
 
-      tryFinishOrContinue(currentLogs, { exerciseId: exercise.id, newCount })
+      const fromEx = routine.exercises[fromIndex]
+      if (fromEx.restSeconds > 0) {
+        setRestUpNext(next)
+        setRestTotal(fromEx.restSeconds)
+        timer.start(fromEx.restSeconds)
+        setPhase('rest')
+      } else {
+        goToSet(next.exerciseIndex, next.setIndex)
+      }
     },
-    [exercise, setIndex, timer, tryFinishOrContinue],
+    [routine, skippedExerciseIds, timer, goToSet, attemptComplete],
   )
+
+  const advanceAfterRest = useCallback(() => {
+    if (restUpNext) {
+      goToSet(restUpNext.exerciseIndex, restUpNext.setIndex)
+    } else {
+      attemptComplete()
+    }
+  }, [restUpNext, goToSet, attemptComplete])
 
   const buildUpdatedLogs = (
     completedValue: number,
@@ -261,17 +304,24 @@ export function WorkoutSession({ routine, onFinish, onBack }: WorkoutSessionProp
     const parsedWeight = weight === '' ? undefined : Number(weight)
     const setNumber = completedOnCurrent + 1
     recordSet(reps, parsedWeight, setNumber)
-    proceedWithLogs(buildUpdatedLogs(reps, parsedWeight, setNumber), setNumber)
+    proceedAfterSet(buildUpdatedLogs(reps, parsedWeight, setNumber), exerciseIndex, {
+      exerciseId: exercise.id,
+      newCount: setNumber,
+    })
   }
 
   const handleTimedSetComplete = useCallback(
     (secondsCompleted: number) => {
       const parsedWeight = weight === '' ? undefined : Number(weight)
       const setNumber = completedOnCurrent + 1
+      const updatedLogs = buildUpdatedLogs(secondsCompleted, parsedWeight, setNumber)
       recordSet(secondsCompleted, parsedWeight, setNumber)
-      proceedWithLogs(buildUpdatedLogs(secondsCompleted, parsedWeight, setNumber), setNumber)
+      proceedAfterSet(updatedLogs, exerciseIndex, {
+        exerciseId: exercise.id,
+        newCount: setNumber,
+      })
     },
-    [weight, completedOnCurrent, recordSet, proceedWithLogs, logs, exercise],
+    [weight, completedOnCurrent, recordSet, proceedAfterSet, exerciseIndex, exercise.id, logs],
   )
 
   const timedCompleteRef = useRef(handleTimedSetComplete)
@@ -293,32 +343,21 @@ export function WorkoutSession({ routine, onFinish, onBack }: WorkoutSessionProp
   }
 
   const handleSkipExercise = () => {
-    if (!confirm(`Skip remaining sets of "${exercise.name}"?`)) return
     timer.stop()
     setRestTotal(0)
     setSetTimerTotal(0)
-    setSkippedExerciseIds((prev) => new Set(prev).add(exercise.id))
+    setRestUpNext(null)
+    const newSkipped = new Set(skippedExerciseIds).add(exercise.id)
+    setSkippedExerciseIds(newSkipped)
     markVisited(exerciseIndex)
 
-    const nextIndex = exerciseIndex + 1
-    if (nextIndex < routine.exercises.length) {
-      const nextEx = routine.exercises[nextIndex]
-      const nextCompleted = getCompletedSetCount(nextEx.id, logs)
-      goToSet(nextIndex, nextCompleted)
+    const next = findNextCircuitPosition(routine, logs, exerciseIndex, newSkipped)
+    if (next) {
+      goToSet(next.exerciseIndex, next.setIndex)
       return
     }
 
-    const outstanding = findOutstandingExercise(routine, logs, visitedExerciseIds)
-    if (outstanding) {
-      const resumeSameExercise =
-        outstanding.exerciseIndex === exerciseIndex &&
-        outstanding.setIndex === completedOnCurrent
-      if (!resumeSameExercise) {
-        goToSet(outstanding.exerciseIndex, outstanding.setIndex)
-        return
-      }
-    }
-    setPhase('complete')
+    attemptComplete()
   }
 
   const handleSkipRest = () => {
@@ -328,21 +367,22 @@ export function WorkoutSession({ routine, onFinish, onBack }: WorkoutSessionProp
   }
 
   useEffect(() => {
+    if (suppressTimerEffects.current || isPaused) return
     if (phase === 'rest' && !timer.isRunning && timer.secondsLeft === 0 && restTotal > 0) {
       playTimerComplete()
       setRestTotal(0)
       advanceAfterRest()
     }
-  }, [phase, timer.isRunning, timer.secondsLeft, restTotal, advanceAfterRest])
+  }, [phase, timer.isRunning, timer.secondsLeft, restTotal, advanceAfterRest, isPaused])
 
   useEffect(() => {
+    if (suppressTimerEffects.current || isPaused) return
     if (phase === 'timed' && !timer.isRunning && timer.secondsLeft === 0 && setTimerTotal > 0) {
       playTimerComplete()
       setSetTimerTotal(0)
-      setPhase('active')
       timedCompleteRef.current(exercise.targetReps)
     }
-  }, [phase, timer.isRunning, timer.secondsLeft, setTimerTotal, exercise.targetReps])
+  }, [phase, timer.isRunning, timer.secondsLeft, setTimerTotal, exercise.targetReps, isPaused])
 
   useEffect(() => {
     if (phase === 'complete' && !workoutCompletePlayed.current) {
@@ -385,6 +425,55 @@ export function WorkoutSession({ routine, onFinish, onBack }: WorkoutSessionProp
   const totalSets = routine.exercises.reduce((sum, e) => sum + e.targetSets, 0)
   const completedSets = logs.reduce((sum, l) => sum + l.sets.length, 0)
   const progressPercent = totalSets > 0 ? (completedSets / totalSets) * 100 : 0
+
+  const resumeWorkout = () => {
+    if (pauseStartedAt) {
+      setPausedMs((ms) => ms + Date.now() - pauseStartedAt)
+      setPauseStartedAt(null)
+    }
+    if ((phase === 'rest' || phase === 'timed') && timer.secondsLeft > 0) {
+      timer.resume()
+    }
+    setIsPaused(false)
+  }
+
+  const handlePause = () => {
+    if (isPaused || showEndPrompt) return
+    if (timer.isRunning) timer.pause()
+    setPauseStartedAt(Date.now())
+    setIsPaused(true)
+  }
+
+  const handleResume = () => {
+    if (!isPaused) return
+    resumeWorkout()
+  }
+
+  const closeEndPrompt = (resumeTimers: boolean) => {
+    setShowEndPrompt(false)
+    suppressTimerEffects.current = false
+    if (resumeTimers && !isPaused && (phase === 'rest' || phase === 'timed') && timer.secondsLeft > 0) {
+      timer.resume()
+    }
+  }
+
+  const handleEndWorkout = () => {
+    suppressTimerEffects.current = true
+    if (timer.isRunning) timer.pause()
+    setShowEndPrompt(true)
+  }
+
+  const handleEndWithoutSaving = () => {
+    suppressTimerEffects.current = false
+    setShowEndPrompt(false)
+    onFinish(false)
+  }
+
+  const handleSaveAndEnd = () => {
+    suppressTimerEffects.current = false
+    setShowEndPrompt(false)
+    handleSaveToDiary()
+  }
 
   if (phase === 'complete') {
     const totalReps = logs.reduce((sum, l) => sum + l.sets.reduce((s, set) => s + set.reps, 0), 0)
@@ -437,11 +526,22 @@ export function WorkoutSession({ routine, onFinish, onBack }: WorkoutSessionProp
   }
 
   return (
+  <>
     <Layout
       title={routine.name}
       onBack={() => {
         if (confirm('Leave workout? Progress will not be saved.')) onBack()
       }}
+      action={
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" className="!px-3 !py-2" onClick={handlePause}>
+            Pause
+          </Button>
+          <Button variant="ghost" className="!px-3 !py-2" onClick={handleEndWorkout}>
+            End
+          </Button>
+        </div>
+      }
     >
       <div className="flex gap-3">
         <div className="min-w-0 flex-1 space-y-5">
@@ -576,7 +676,12 @@ export function WorkoutSession({ routine, onFinish, onBack }: WorkoutSessionProp
 
               {!isTimed && (
                 <Button fullWidth onClick={handleCompleteSet}>
-                  {isLastSet && isLastExercise ? 'Finish Workout' : 'Complete Set'}
+                  {nextAfterCurrentSet(logs, {
+                    exerciseId: exercise.id,
+                    newCount: completedOnCurrent + 1,
+                  })
+                    ? 'Complete Set'
+                    : 'Finish Workout'}
                 </Button>
               )}
               <Button variant="ghost" fullWidth onClick={handleSkipExercise}>
@@ -598,5 +703,45 @@ export function WorkoutSession({ routine, onFinish, onBack }: WorkoutSessionProp
         />
       </div>
     </Layout>
+
+    {isPaused && (
+      <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-surface/95 px-4 backdrop-blur-sm">
+        <p className="text-xl font-bold text-text">Workout paused</p>
+        <p className="mt-1 font-mono text-sm text-text-muted">{formatElapsed(elapsedSeconds)} elapsed</p>
+        <Button className="mt-8 min-w-48" onClick={handleResume}>
+          Resume
+        </Button>
+        <Button variant="ghost" className="mt-2 min-w-48" onClick={handleEndWorkout}>
+          End workout
+        </Button>
+      </div>
+    )}
+
+    {showEndPrompt && (
+      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+        <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-5 shadow-xl">
+          <h2 className="text-lg font-semibold text-text">End workout?</h2>
+          <p className="mt-1 text-sm text-text-muted">
+            {completedSets > 0
+              ? `You have ${completedSets} completed set(s) logged.`
+              : 'No sets completed yet.'}
+          </p>
+          <div className="mt-4 space-y-2">
+            {completedSets > 0 && (
+              <Button fullWidth onClick={handleSaveAndEnd}>
+                Save & end
+              </Button>
+            )}
+            <Button variant="secondary" fullWidth onClick={handleEndWithoutSaving}>
+              {completedSets > 0 ? 'End without saving' : 'End workout'}
+            </Button>
+            <Button variant="ghost" fullWidth onClick={() => closeEndPrompt(true)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   )
 }

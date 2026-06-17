@@ -18,6 +18,30 @@ export function useRestTimer() {
     setSecondsLeft(0)
   }, [clear])
 
+  const pause = useCallback(() => {
+    clear()
+    setIsRunning(false)
+  }, [clear])
+
+  const resume = useCallback(() => {
+    setSecondsLeft((prev) => {
+      if (prev <= 0) return prev
+      clear()
+      setIsRunning(true)
+      intervalRef.current = window.setInterval(() => {
+        setSecondsLeft((current) => {
+          if (current <= 1) {
+            clear()
+            setIsRunning(false)
+            return 0
+          }
+          return current - 1
+        })
+      }, 1000)
+      return prev
+    })
+  }, [clear])
+
   const start = useCallback(
     (seconds: number) => {
       clear()
@@ -57,5 +81,5 @@ export function useRestTimer() {
 
   useEffect(() => () => clear(), [clear])
 
-  return { secondsLeft, isRunning, start, stop, addTime, subtractTime }
+  return { secondsLeft, isRunning, start, stop, pause, resume, addTime, subtractTime }
 }

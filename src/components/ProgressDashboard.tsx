@@ -101,9 +101,9 @@ export function ProgressDashboard({ logs }: ProgressDashboardProps) {
       <section>
         <h2 className="mb-3 text-lg font-bold text-text">Progress charts</h2>
         <div className="space-y-3">
-          <SimpleLineChart data={benchData} label="Bench press" unit="kg" color="#22c55e" />
-          <SimpleLineChart data={squatData} label="Squat" unit="kg" color="#6366f1" />
-          <SimpleLineChart data={volumeData} label="Total volume" unit="kg" color="#f59e0b" />
+          <SimpleLineChart data={benchData} label="Bench press" unit="kg" color="#2ECC71" />
+          <SimpleLineChart data={squatData} label="Squat" unit="kg" color="#00C853" />
+          <SimpleLineChart data={volumeData} label="Total volume" unit="kg" color="#A8E6CF" />
         </div>
       </section>
 

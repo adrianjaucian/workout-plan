@@ -84,7 +84,7 @@ export function RoutineEditor({ routine, onSave, onBack }: RoutineEditorProps) {
 
   const addExercise = () => {
     const newExercise = emptyExercise()
-    setExercises((prev) => [newExercise, ...prev])
+    setExercises((prev) => [...prev, newExercise])
     setExpandedExerciseId(newExercise.id)
   }
 
@@ -213,16 +213,7 @@ export function RoutineEditor({ routine, onSave, onBack }: RoutineEditorProps) {
         </div>
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium text-text-muted">Exercises</h2>
-            <button
-              type="button"
-              onClick={addExercise}
-              className="text-sm font-medium text-accent hover:text-accent-dim"
-            >
-              + Add exercise
-            </button>
-          </div>
+          <h2 className="text-sm font-medium text-text-muted">Exercises</h2>
 
           {exercises.map((exercise, index) => {
             const lib = getLibraryExercise(exercise.libraryId)
@@ -457,6 +448,10 @@ export function RoutineEditor({ routine, onSave, onBack }: RoutineEditorProps) {
               </div>
             )
           })}
+
+          <Button variant="secondary" fullWidth onClick={addExercise}>
+            + Add exercise
+          </Button>
         </div>
 
         <Button fullWidth onClick={handleSave}>

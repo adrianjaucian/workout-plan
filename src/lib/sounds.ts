@@ -52,7 +52,7 @@ export function playTimerComplete(): void {
 
   const t = audioContext.currentTime
   const notes = [523.25, 659.25, 783.99, 1046.5]
-  notes.forEach((freq, i) => playNote(freq, t + i * 0.11, 0.55, 0.1))
+  notes.forEach((freq, i) => playNote(freq, t + i * 0.11, 0.55, 0.22))
 
   vibrate([120, 60, 120])
 }
@@ -64,9 +64,9 @@ export function playWorkoutComplete(): void {
 
   const t = audioContext.currentTime
   const melody = [392.0, 493.88, 587.33, 659.25, 783.99, 987.77]
-  melody.forEach((freq, i) => playNote(freq, t + i * 0.09, 0.65, 0.13))
-  playNote(196.0, t + 0.45, 1.4, 0.07)
-  playNote(293.66, t + 0.7, 1.0, 0.05, 'triangle')
+  melody.forEach((freq, i) => playNote(freq, t + i * 0.09, 0.65, 0.28))
+  playNote(196.0, t + 0.45, 1.4, 0.16)
+  playNote(293.66, t + 0.7, 1.0, 0.12, 'triangle')
 
   vibrate([180, 90, 180, 90, 280])
 }
